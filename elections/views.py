@@ -38,7 +38,7 @@ class ElectionListView(generics.ListAPIView):
         user = self.request.user
         if user.role == 'admin':
             return Election.objects.all().order_by('-created_at')
-        return Election.objects.filter(status__in=['open', 'closed', 'results']).order_by('-created_at')
+        return Election.objects.filter(status__in=['applications_open', 'applications_closed', 'voting_open', 'voting_closed', 'results']).order_by('-created_at')
 
 
 class ElectionDetailView(generics.RetrieveAPIView):
@@ -65,13 +65,15 @@ class ElectionStatusView(APIView):
         action = request.data.get('action')
 
         transitions = {
-            'open': ('draft', 'open', 'election_opened'),
-            'close': ('open', 'closed', 'election_closed'),
-            'publish': ('closed', 'results', 'results_published'),
-        }
+           'open_applications':   ('draft',                'applications_open',    'applications_opened'),
+           'close_applications':  ('applications_open',    'applications_closed',  'applications_closed'),
+           'open_voting':         ('applications_closed',  'voting_open',          'voting_opened'),
+           'close_voting':        ('voting_open',          'voting_closed',        'voting_closed'),
+           'publish':             ('voting_closed',        'results',              'results_published'),
+        } 
 
         if action not in transitions:
-            return Response({'error': 'Invalid action. Use open, close, or publish.'}, status=400)
+            return Response({'error': 'Invalid action. Use open_applications, close_applications, open_voting, close_voting, or publish.'}, status=400)
 
         required_status, new_status, log_action_name = transitions[action]
 
@@ -214,3 +216,19 @@ class AuditLogView(generics.ListAPIView):
     serializer_class = AuditLogSerializer
     permission_classes = (IsAdmin,)
     queryset = AuditLog.objects.all()
+
+
+class ElectionDeleteView(APIView):
+    permission_classes = (IsAdmin,)
+
+    def delete(self, request, pk):
+        election = get_object_or_404(Election, pk=pk)
+        if election.status not in ('draft', 'applications_open', 'applications_closed'):
+            return Response(
+                {'error': 'Election can only be deleted before voting starts'},
+                status=400
+            )
+        title = election.title
+        election.delete()
+        log_action(request.user, 'election_created', f'Deleted election: {title}', request)
+        return Response({'message': 'Election deleted successfully.'}, status=204)

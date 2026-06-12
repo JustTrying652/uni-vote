@@ -36,8 +36,8 @@ class CandidateApplySerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         election = position.election
 
-        if election.status not in ('draft', 'open'):
-            raise serializers.ValidationError('Applications are closed for this election.')
+        if not election.applications_active:
+            raise serializers.ValidationError('Applications are not open for this election.')
 
         if Candidate.objects.filter(position=position, user=user).exists():
             raise serializers.ValidationError('You have already applied for this position.')

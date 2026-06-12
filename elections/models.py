@@ -6,15 +6,17 @@ from accounts.models import User
 class Election(models.Model):
     STATUS_CHOICES = (
         ('draft', 'Draft'),
-        ('open', 'Open'),
-        ('closed', 'Closed'),
+        ('applications_open', 'Applications Open'),
+        ('applications_closed', 'Applications Closed'),
+        ('voting_open', 'Voting Open'),
+        ('voting_closed', 'Voting Closed'),
         ('results', 'Results Published'),
     )
 
     title = models.CharField(max_length=200)
     description = models.TextField()
-    academic_year = models.CharField(max_length=20)  # e.g. 2025/2026
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    academic_year = models.CharField(max_length=20)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='draft')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='elections_created')
@@ -26,8 +28,11 @@ class Election(models.Model):
     @property
     def is_active(self):
         now = timezone.now()
-        return self.status == 'open' and self.start_time >=now 
+        return self.status == 'voting_open' and self.end_time >= now
 
+    @property
+    def applications_active(self):
+        return self.status == 'applications_open'
 
 class Position(models.Model):
     election = models.ForeignKey(Election, on_delete=models.CASCADE, related_name='positions')
@@ -84,8 +89,10 @@ class AuditLog(models.Model):
     ACTION_CHOICES = (
         ('vote_cast', 'Vote Cast'),
         ('election_created', 'Election Created'),
-        ('election_opened', 'Election Opened'),
-        ('election_closed', 'Election Closed'),
+        ('applications_opened', 'Applications Opened'),
+        ('applications_closed', 'Applications Closed'),
+        ('voting_opened', 'Voting Opened'),
+        ('voting_closed', 'Voting Closed'),
         ('candidate_approved', 'Candidate Approved'),
         ('candidate_rejected', 'Candidate Rejected'),
         ('results_published', 'Results Published'),
