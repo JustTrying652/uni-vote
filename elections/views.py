@@ -23,9 +23,11 @@ class MyApplicationsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
-        position_ids = Candidate.objects.filter(
-            user=request.user
-        ).values_list('position_id', flat=True)
+        election_id = request.query_params.get('election_id')
+        qs = Candidate.objects.filter(user=request.user)
+        if election_id:
+            qs = qs.filter(position__election_id=election_id)
+        position_ids = qs.values_list('position_id', flat=True)
         return Response({'position_ids': list(position_ids)})
 # --- Election Views ---
 
