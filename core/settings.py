@@ -61,8 +61,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         **dj_database_url.parse(os.getenv('DATABASE_URL')),
-        'CONN_MAX_AGE': 60,
+        'CONN_MAX_AGE': 0,
         'CONN_HEALTH_CHECKS': True,
+        'OPTIONS': {
+            'connect_timeout': 10,
+        }
     }
 }
 
