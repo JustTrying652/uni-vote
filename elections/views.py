@@ -255,6 +255,24 @@ class PositionDeleteView(APIView):
         position.delete()
         return Response({'message': 'Position deleted successfully.'}, status=204)
 
+class ElectionUpdateView(generics.UpdateAPIView):
+    permission_classes = (IsAdmin,)
+    queryset = Election.objects.all()
+
+    def get_serializer_class(self):
+        return ElectionCreateSerializer
+
+    def update(self, request, *args, **kwargs):
+        election = self.get_object()
+        if election.status not in ('draft', 'applications_open'):
+            return Response(
+                {'error': 'Only draft or applications-open elections can be edited.'},
+                status=400
+            )
+        serializer = self.get_serializer(election, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(ElectionSerializer(election, context={'request': request}).data)
 
 class ElectionTurnoutView(APIView):
     permission_classes = (IsAdmin,)

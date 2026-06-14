@@ -78,16 +78,11 @@ class ElectionCreateSerializer(serializers.ModelSerializer):
         fields = ('title', 'description', 'academic_year', 'start_time', 'end_time')
 
     def validate(self, attrs):
-        if attrs['start_time'] >= attrs['end_time']:
+        start = attrs.get('start_time')
+        end = attrs.get('end_time')
+        if start and end and start >= end:
             raise serializers.ValidationError('End time must be after start time.')
-        if attrs['start_time'] < timezone.now():
-            raise serializers.ValidationError('Start time cannot be in the past.')
         return attrs
-
-    def create(self, validated_data):
-        validated_data['created_by'] = self.context['request'].user
-        return super().create(validated_data)
-
 
 class VoteSerializer(serializers.ModelSerializer):
     class Meta:
