@@ -1,4 +1,4 @@
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, parsers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
@@ -121,10 +121,10 @@ class CandidateListView(generics.ListAPIView):
 class CandidateApplyView(generics.CreateAPIView):
     serializer_class = CandidateApplySerializer
     permission_classes = (IsVerifiedVoter,)
+    parser_classes = (parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser)
 
     def perform_create(self, serializer):
         serializer.save()
-
 
 class CandidateApprovalView(APIView):
     """Admin approves or rejects a candidate."""
