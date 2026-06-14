@@ -15,9 +15,13 @@ from .permissions import IsAdmin, IsVerifiedVoter
 def log_action(user, action, detail='', request=None):
     ip = None
     if request:
-        ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR'))
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            # Take only the first IP from the chain
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
     AuditLog.objects.create(user=user, action=action, detail=detail, ip_address=ip)
-
 
 class MyApplicationsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
