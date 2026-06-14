@@ -232,3 +232,23 @@ class ElectionDeleteView(APIView):
         election.delete()
         log_action(request.user, 'election_created', f'Deleted election: {title}', request)
         return Response({'message': 'Election deleted successfully.'}, status=204)
+
+
+class PositionDeleteView(APIView):
+    permission_classes = (IsAdmin,)
+
+    def delete(self, request, pk):
+        from django.shortcuts import get_object_or_404
+        position = get_object_or_404(Position, pk=pk)
+        if position.election.status not in ('draft', 'applications_open'):
+            return Response(
+                {'error': 'Positions can only be deleted before applications close.'},
+                status=400
+            )
+        if position.candidates.exists():
+            return Response(
+                {'error': 'Cannot delete a position that already has candidates.'},
+                status=400
+            )
+        position.delete()
+        return Response({'message': 'Position deleted successfully.'}, status=204)
