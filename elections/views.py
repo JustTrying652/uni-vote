@@ -254,3 +254,44 @@ class PositionDeleteView(APIView):
             )
         position.delete()
         return Response({'message': 'Position deleted successfully.'}, status=204)
+
+
+class ElectionTurnoutView(APIView):
+    permission_classes = (IsAdmin,)
+
+    def get(self, request, pk):
+        election = get_object_or_404(Election, pk=pk)
+
+        # Get all voters who voted in this election
+        voter_ids = Vote.objects.filter(
+            position__election=election
+        ).values_list('voter_id', flat=True).distinct()
+
+        from accounts.models import User
+
+        voters = User.objects.filter(id__in=voter_ids)
+        total_registered = User.objects.filter(role='voter', is_verified=True).count()
+
+        # Breakdown by faculty
+        from django.db.models import Count
+        faculty_breakdown = (
+            voters.values('faculty')
+            .annotate(count=Count('id'))
+            .order_by('-count')
+        )
+
+        # Breakdown by year of study
+        year_breakdown = (
+            voters.values('year_of_study')
+            .annotate(count=Count('id'))
+            .order_by('year_of_study')
+        )
+
+        return Response({
+            'election': election.title,
+            'total_voters': voter_ids.count(),
+            'total_registered': total_registered,
+            'turnout_percentage': round((voter_ids.count() / total_registered * 100), 1) if total_registered > 0 else 0,
+            'faculty_breakdown': list(faculty_breakdown),
+            'year_breakdown': list(year_breakdown),
+        })

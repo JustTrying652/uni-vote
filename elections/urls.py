@@ -5,7 +5,7 @@ from .views import (
     CandidateListView, CandidateApplyView, CandidateApprovalView,
     CastVoteView, MyVotesView,
     ElectionResultsView,
-    AuditLogView, MyApplicationsView, ElectionDeleteView, PositionDeleteView
+    AuditLogView, MyApplicationsView, ElectionDeleteView, PositionDeleteView, ElectionTurnoutView
 )
 
 urlpatterns = [
@@ -33,4 +33,5 @@ urlpatterns = [
     path('audit/', AuditLogView.as_view(), name='audit_log'),
     path('<int:pk>/delete/', ElectionDeleteView.as_view(), name='election_delete'),
     path('positions/<int:pk>/delete/', PositionDeleteView.as_view(), name='position_delete'),
+    path('<int:pk>/turnout/', ElectionTurnoutView.as_view(), name='election_turnout'),
 ]
